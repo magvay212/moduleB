@@ -1,0 +1,62 @@
+mkdir -p /etc/ansible/roles/client-deploy-role/tasks
+touch /etc/ansible/roles/client-deploy-role/tasks/main.yml
+---
+# Файл: /etc/ansible/roles/client-deploy-role/tasks/main.yml
+
+- name: Установить браузер Firefox
+  apt:
+    name: firefox
+    state: present
+
+- name: Установить Zabbix-agent
+  apt:
+    name: zabbix-agent
+    state: present
+
+- name: Установить Midnight Commander
+  apt:
+    name: mc
+    state: present
+
+- name: Разрешить доступ к sudo для группы group1
+  lineinfile:
+    dest: /etc/sudoers
+    regexp: '^%group1'
+    line: '%group1 ALL=(ALL:ALL) ALL'
+    validate: 'visudo -cf %s'
+    state: present
+    create: yes
+
+- name: Создать ярлык Firefox на рабочем столе
+  template:
+    src: firefox.desktop.j2
+    dest: /home/user/Desktop/firefox.desktop
+    owner: user
+    group: user
+    mode: 0644
+
+- name: Удалить все остальные ярлыки с рабочего стола
+  file:
+    path: /home/user/Desktop
+    state: absent
+    wildcard: yes
+    exclude: firefox.desktop
+	
+mkdir -p /etc/ansible/roles/client-deploy-role/templates
+touch /etc/ansible/roles/client-deploy-role/templates/firefox.desktop.j2
+
+[Desktop Entry]
+Encoding=UTF-8
+Name=Firefox
+Exec=firefox
+Icon=firefox.png
+Terminal=false
+Type=Application
+
+---
+# Файл: /etc/ansible/client_install.yml
+
+- hosts: SRV-BR
+  become: true
+  roles:
+    - client-deploy-role
